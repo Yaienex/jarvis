@@ -1,0 +1,5 @@
+/target
+/myenv
+/src/__pycache__
+/src/.env
+/src/jarvis
