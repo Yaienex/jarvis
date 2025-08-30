@@ -3,11 +3,44 @@ import easygui
 import notify_sys
 import screen_brightness_control as sbc
 from grammar import NUMBER_DICT
+
+
+import pulsectl
+
+pulse_vol = pulsectl.Pulse('volume-control')
+pulse_mic = pulsectl.Pulse('mic-control')
+# Récupérer le périphérique de sortie par défaut
+sink = pulse_vol.sink_list()[0]
+source = pulse_mic.source_list()[0]
+def volume_set(vol):
+    volume = sink.volume
+    volume.value_flat = vol
+    pulse_vol.volume_set(sink,volume)
+
+def volume_up(step=0.05):  # 5%
+    volume = sink.volume
+    volume.value_flat = min(1.5, volume.value_flat + step)  # max 150%
+    pulse_vol.volume_set(sink, volume)
+
+def volume_down(step=0.05):
+    volume = sink.volume
+    volume.value_flat = max(0.0, volume.value_flat - step)
+    pulse_vol.volume_set(sink, volume)
+
+def mute_toggle():
+    pulse_vol.mute(sink, not sink.mute)
+
+def mic_toggle():
+    pulse_mic.mute(source,True)
+   # pulse_mic.source_suspend(True)
+
+
+
 def main_actions(command):
     main_cmd = command.pop(0)
     if len(command) == 0:
         return 0
-    if main_cmd == "ouvre":
+    if main_cmd in ["ouvre","allume"]:
         open_handler(command)
     elif main_cmd == "ferme":
         close_handler(command)
@@ -29,6 +62,12 @@ def open_handler(command):
         subprocess.run(["kitty","--detach","--directory","~"]) 
     elif argument == "fichier" or argument == "document":
         subprocess.run(["thunar"])
+    elif argument == "son":
+        mute_toggle()
+    elif argument == "micro":
+        mic_toggle()
+    else :
+        return
 
 
 #ps -e |grep -e fir -e chr -e bing -e opera -e brave
@@ -51,6 +90,10 @@ def close_handler(command):
     elif argument == "toi":
         notify_sys.notifier("","Going to sleep")
         exit(0)
+    elif argument == "son":
+        mute_toggle()
+    elif argument == "micro":
+        mic_toggle()
     else:#default case does nothing to prevent crash
         return
 
@@ -90,16 +133,14 @@ def close_handler(command):
             subprocess.run(["kill",choices_dict[varp]])
 
 
-   
-
 def increase_handler(command):
     argument = command.pop(0)
-    if argument in [ "le","l","les"] and len(command) >1:
+    if argument in [ "le","l","les"] and len(command) >0:
         argument = command.pop(0)
 
     dest_number = 10
     flag_add = True
-    if len(command) > 0 : #it means there are additionnal infos
+    if len(command) > 1 : #it means there are additionnal infos
         dest_number = NUMBER_DICT[command[1]]
         if command[0] in [ "a","jusqu'a"] :
             flag_add = False
@@ -112,16 +153,24 @@ def increase_handler(command):
         if dest_number >= curr_bright and not flag_add:
             sbc.fade_brightness(dest_number,start=curr_bright,interval=0.1)
 
+    if argument in ["volume","son"]:
+        if flag_add:
+            volume_up(0.1)
+        if sink.volume.value_flat <= dest_number/100.0 and not flag_add:
+            volume_set(dest_number/100.0) 
+
+            
+
 
 def decrease_handler(command):
     argument = command.pop(0)
-    if argument in [ "le","l","les"] and len(command) >1:
+    if argument in [ "le","l","les"] and len(command) >0:
         argument = command.pop(0)
 
 
     dest_number = 10
     flag_sub = True
-    if len(command) > 0 : #it means there are additionnal infos
+    if len(command) > 1 : #it means there are additionnal infos
         dest_number = NUMBER_DICT[command[1]]
         if command[0] in [ "a","jusqu'a"] :
             flag_sub = False
@@ -135,10 +184,17 @@ def decrease_handler(command):
         if dest_number >= curr_bright and not flag_sub:
             sbc.fade_brightness(dest_number,start=curr_bright,interval=0.1)
 
+    if argument in ["volume","son"]:
+        if flag_sub:
+            volume_down(0.1)
+        if sink.volume.value_flat >= dest_number/100.0 and not flag_sub:
+            volume_set(dest_number/100.0) 
+
+
 def lock_handler(command):
     argument = command[0]
     
     if argument in [ "le","l","les"] and len(command) >1:
         argument = command[1]
-    if argument == "ordinateur":
+    if argument in ["ordinateur","pc"]:
         subprocess.run(["lock"]) # ATTENTION => C'est une commande perso, changez pour que ça corresponde à votre système 

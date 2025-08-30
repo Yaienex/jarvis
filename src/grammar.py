@@ -10,8 +10,10 @@ ACTIONS = [## ACTIONS
             "verrouille",]
 NOMS = [ "musique", 
             "fenetre",
+            "micro",
             "active",
             "volume", 
+            "son",
             "lumiere",
             "terminal",
             "terminaux",
