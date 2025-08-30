@@ -21,27 +21,30 @@ from gi.repository import AppIndicator3, Gtk
 
 def on_quit(_):
     Gtk.main_quit()
-    exit(0)
+    notify_sys.notifier("","Going to sleep")
+    os._exit(0)
+   
+
 dirname = os.path.dirname(__file__)
 filename = os.path.join(dirname, "robot.png")
 def start_tray():
     indicator = AppIndicator3.Indicator.new(
         "Jarvis",
-        filename,  # icône
+        filename, 
         AppIndicator3.IndicatorCategory.APPLICATION_STATUS,
     )
 
     # Menu contextuel
     menu = Gtk.Menu()
     item_quit = Gtk.MenuItem(label="Quitter")
-    item_quit.connect("activate", Gtk.main_quit)
+    item_quit.connect("activate", on_quit)
     menu.append(item_quit)
     menu.show_all()
 
     indicator.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
     indicator.set_menu(menu)
 
-    Gtk.main()  #
+    Gtk.main()  
 
 # Constantes 
 DIRNAME = os.path.dirname(__file__)

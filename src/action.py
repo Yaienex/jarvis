@@ -1,7 +1,8 @@
 import subprocess
 import easygui
 import notify_sys
-
+import screen_brightness_control as sbc
+from grammar import NUMBER_DICT
 def main_actions(command):
     main_cmd = command.pop(0)
     if len(command) == 0:
@@ -14,6 +15,8 @@ def main_actions(command):
         decrease_handler(command)
     elif main_cmd =="augmente":
         increase_handler(command)
+    elif main_cmd == "verrouille":
+        lock_handler(command)
 
 
 def open_handler(command):
@@ -90,7 +93,52 @@ def close_handler(command):
    
 
 def increase_handler(command):
-    return 0
+    argument = command.pop(0)
+    if argument in [ "le","l","les"] and len(command) >1:
+        argument = command.pop(0)
+
+    dest_number = 10
+    flag_add = True
+    if len(command) > 0 : #it means there are additionnal infos
+        dest_number = NUMBER_DICT[command[1]]
+        if command[0] in [ "a","jusqu'a"] :
+            flag_add = False
+        if command[0] == "de":
+            flag_add = True 
+    if argument == "lumiere":
+        curr_bright = sbc.get_brightness()[0]
+        if flag_add :
+            sbc.fade_brightness(curr_bright+dest_number,start=curr_bright,interval=0.1)
+        if dest_number >= curr_bright and not flag_add:
+            sbc.fade_brightness(dest_number,start=curr_bright,interval=0.1)
+
 
 def decrease_handler(command):
-    return 0
+    argument = command.pop(0)
+    if argument in [ "le","l","les"] and len(command) >1:
+        argument = command.pop(0)
+
+
+    dest_number = 10
+    flag_sub = True
+    if len(command) > 0 : #it means there are additionnal infos
+        dest_number = NUMBER_DICT[command[1]]
+        if command[0] in [ "a","jusqu'a"] :
+            flag_sub = False
+        if command[0] == "de":
+            flag_sub = True 
+
+    if argument == "lumiere":
+        curr_bright = sbc.get_brightness()[0]
+        if flag_sub :
+            sbc.fade_brightness(curr_bright-dest_number,start=curr_bright,interval=0.1)
+        if dest_number >= curr_bright and not flag_sub:
+            sbc.fade_brightness(dest_number,start=curr_bright,interval=0.1)
+
+def lock_handler(command):
+    argument = command[0]
+    
+    if argument in [ "le","l","les"] and len(command) >1:
+        argument = command[1]
+    if argument == "ordinateur":
+        subprocess.run(["lock"]) # ATTENTION => C'est une commande perso, changez pour que ça corresponde à votre système 
